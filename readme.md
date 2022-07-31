@@ -1,7 +1,10 @@
 As someone who writes thier Roblox code in Visual Studio, I found networking to be very annoying.
 I would prefer to manage networking VIA code, so that was the initial reason for creating this.
 
-In the backend, networks are all ran through the same remotes. Initializing a new network essentially just creates a new group of topics
+In the backend, networks are all ran through the same remotes. Initializing a new network essentially just creates a new group of topics]
+
+Also, this module also supports the ability to link to a client using an Instance. In theory you could have an Instance, say for example the players weapon. The weapon could spawn it's own network where two classes (one on client, one on server) would communicate with eachother to manage said
+weapon.
 
 Server
 
