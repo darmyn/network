@@ -8,7 +8,9 @@ local network = require(replicatedStorage.network)
 local myNetwork = network.new("test", {
 	sayHello = network.event.new(),
 	serverAddition = network.response.new()
-})
+}) 
+
+-- PRO TIP: You can pass a third argument to `network.new`. It expects a list of players which represents who has access to the network.
 
 local topics = myNetwork.topics
 
