@@ -1,3 +1,8 @@
+As someone who writes thier Roblox code in Visual Studio, I found networking to be very annoying.
+I would prefer to manage networking VIA code, so that was the initial reason for creating this.
+
+In the backend, networks are all ran through the same remotes. Initializing a new network essentially just creates a new group of topics
+
 Server
 
 ```lua
