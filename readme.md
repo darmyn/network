@@ -5,35 +5,31 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local network = require(replicatedStorage.network)
 
-local buildingNetwork = network.new("buildingNetwork", {
-	buildPart = network.event.new()
+local myNetwork = network.new("test", {
+	sayHello = network.event.new(),
+	serverAddition = network.response.new()
 })
 
-buildingNetwork.topics.buildPart:connect(function(player: Player)
-	local character = player.Character
-	local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-	
-	local newPart = Instance.new("Part")
-	newPart.CFrame = CFrame.new(humanoidRootPart.CFrame.LookVector * 10 + humanoidRootPart.Position, humanoidRootPart.Position)
-	newPart.Parent = workspace
+local topics = myNetwork.topics
+
+topics.sayHello:connect(function(player: Player)
+	print("Hello: ".. player.Name)
+end)
+
+topics.serverAddition:connect(function(player: Player, num1: number, num2: number)
+	return num1 + num2
 end)
 ```
 
 Client
 ```lua
-local userInputService = game:GetService("UserInputService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local network = require(replicatedStorage.network)
 
-local buildingNetwork = network.new("buildingNetwork")
+local myNetwork = network.new("test")
+local topics = myNetwork.topics
 
-userInputService.InputBegan:Connect(function(input, gpe)
-	if not gpe then
-		if input.KeyCode == Enum.KeyCode.E then
-			print("e")
-			buildingNetwork.topics.buildPart:fire()
-		end
-	end
-end)
+topics.sayHello:fire()
+print(topics.serverAddition:fire(5, 10))
 ```
