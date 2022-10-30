@@ -106,7 +106,7 @@ local function decompressTopics(topics: compressedTopics)
 	return result
 end
 
-local function convertMembersToHashMap(members: memberList)
+local function convertMembersToDict(members: memberList)
 	local result = {}
 	for _, member in pairs(members) do
 		result[member] = true
@@ -131,7 +131,7 @@ function network.new(id: networkId, topics: topics?, members: memberList?)
 	if isServer then
 		self.topics = (topics)
 		if members then
-			self.members = convertMembersToHashMap(members)
+			self.members = convertMembersToDict(members)
 		end
 	else
 		local replicatedTopics: compressedTopics, replicatedMembers = getReplicatedNetworkInfo:InvokeServer(id)
