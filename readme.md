@@ -9,8 +9,6 @@ local topics = {
 	myResponse = Network.response()
 }
 
-local myNetwork = network.new("test", topics) 
-
 -- PRO TIP: You can pass a third argument to `network.new`. It expects a list of players which represents who has access to the network.
 
 topics.myEvent:connect(function(player: Player)
@@ -20,6 +18,8 @@ end)
 topics.myResponse:connect(function(player: Player, num1: number, num2: number)
 	return num1 + num2
 end)
+
+network.new("test", topics)
 ```
 
 Client
