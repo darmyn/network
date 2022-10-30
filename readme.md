@@ -37,3 +37,27 @@ local topics = myNetwork.topics :: {
 topics.myEvent:fire()
 print(topics.myResponse:fire())
 ```
+
+Server/Client
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local runService = game:GetService("RunService")
+
+local isServer = runService:IsServer()
+
+local Network = require(replicatedStorage.network)
+
+local myClass = {}
+myClass.__index = myClass
+
+function myClass.new(owner: Player)
+	local self = setmetatable({}, myClass)
+	if isServer then
+		self.topics = {
+			test = Network.event()
+		}
+		self.network = Network.new(owner.UserId.."_myClass", self.topics, {owner})
+	else
+		self.network = Network.new(owner.UserId)
+		self.topics = self.network.topics --> will pull the type from self.topics above.
+	return self
+end
