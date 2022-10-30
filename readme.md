@@ -38,6 +38,8 @@ topics.myEvent:fire()
 print(topics.myResponse:fire())
 ```
 Server/Client
+
+Often times I find myself coupling client and server code into a single module. Network is supportive of this paradigm.
 ```lua
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local runService = game:GetService("RunService")
