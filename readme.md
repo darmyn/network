@@ -59,6 +59,9 @@ function myClass.new(owner: Player)
 	else
 		self.network = Network.new(owner.UserId)
 		self.topics = self.network.topics --> will pull the type from self.topics above.
+	end
 	return self
 end
+
+return myClass
 ```
