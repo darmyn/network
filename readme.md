@@ -37,8 +37,8 @@ local topics = myNetwork.topics :: {
 topics.myEvent:fire()
 print(topics.myResponse:fire())
 ```
-
 Server/Client
+```lua
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local runService = game:GetService("RunService")
 
@@ -61,3 +61,4 @@ function myClass.new(owner: Player)
 		self.topics = self.network.topics --> will pull the type from self.topics above.
 	return self
 end
+```
