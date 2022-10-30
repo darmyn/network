@@ -26,10 +26,13 @@ Client
 ```lua
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
-local network = require(replicatedStorage.network)
+local Network = require(replicatedStorage.network)
 
-local myNetwork = network.new("test")
-local topics = myNetwork.topics
+local network = network.new("test")
+local topics = myNetwork.topics :: {
+	myEvent: Network.event,
+	myResponse: Network.response
+}
 
 topics.myEvent:fire()
 print(topics.myResponse:fire())
