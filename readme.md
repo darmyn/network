@@ -50,7 +50,7 @@ local isServer = runService:IsServer()
 
 local Network = require(replicatedStorage.network)
 
-local myClass = {}
+local myClass = {} :: myClass
 myClass.__index = myClass
 
 function myClass.new(owner: Player)
@@ -62,10 +62,17 @@ function myClass.new(owner: Player)
 		self.network = Network.new(owner.UserId.."_myClass", self.topics, {owner})
 	else
 		self.network = Network.new(owner.UserId)
-		self.topics = self.network.topics --> will pull the type from self.topics above.
+		self.topics = self.network.topics
 	end
+	self:testMethod()
 	return self
 end
+
+function myClass:testMethod()
+	self.topics.test --> still get autocomplete for all of your topics :)
+end
+
+type myClass = typeof(myClass.new())
 
 return myClass
 ```
