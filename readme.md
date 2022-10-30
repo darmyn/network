@@ -5,7 +5,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local Network = require(replicatedStorage.network)
 
 local topics = {
-	myEvent = Network.event()
+	myEvent = Network.event(),
 	myResponse = Network.response()
 }
 
@@ -19,7 +19,9 @@ topics.myResponse:connect(function(player: Player, num1: number, num2: number)
 	return num1 + num2
 end)
 
-network.new("test", topics)
+Network.new("test", topics)
+
+print(require(replicatedStorage.ServerClient).new())
 ```
 
 Client
@@ -28,14 +30,14 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local Network = require(replicatedStorage.network)
 
-local network = network.new("test")
-local topics = myNetwork.topics :: {
-	myEvent: Network.event,
-	myResponse: Network.response
+local network = Network.new("test")
+local topics = network.topics :: {
+	myEvent: Network.topic,
+	myResponse: Network.topic
 }
 
 topics.myEvent:fire()
-print(topics.myResponse:fire())
+print(topics.myResponse:fire(5, 7))
 ```
 Server/Client
 
