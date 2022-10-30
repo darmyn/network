@@ -31,6 +31,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local Network = require(replicatedStorage.network)
 
 local network = Network.new("test")
+--> you can optionally define your own types to provide autocomplete on the client side
 local topics = network.topics :: {
 	myEvent: Network.topic,
 	myResponse: Network.topic
