@@ -20,7 +20,6 @@ end)
 Network.new("test", topics) 
 --> you can also pass a third argument representing a list of players who will have access to the topics inside of this network.
 
-print(require(replicatedStorage.ServerClient).new())
 ```
 
 Client
