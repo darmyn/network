@@ -57,7 +57,7 @@ function myClass.new(owner: Player)
 	local self = setmetatable({}, myClass)
 	if isServer then
 		self.topics = {
-			test = Network.event()
+			test = Network.response()
 		}
 		self.network = Network.new(owner.UserId.."_myClass", self.topics, {owner})
 	else
@@ -68,8 +68,14 @@ function myClass.new(owner: Player)
 	return self
 end
 
-function myClass:testMethod()
-	self.topics.test --> still get autocomplete for all of your topics :)
+function myClass:init()
+	if isServer then
+		self.topics.test:connect(function()
+			return true
+		end)
+	elseif self.topics.test:fire() then
+		print("success")
+	end
 end
 
 type myClass = typeof(myClass.new())
