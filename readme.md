@@ -77,7 +77,7 @@ function myClass:init()
 		--[[
 			the best part about this module when it comes to
 			coupling your client server code is you do not have to explicitely type
-			the topics on the client side if you want autocomplete. self.topics will show autocomplete
+			the topics on the client side if you want autocomplete (as shown in the client example above). self.topics will show autocomplete
 			based on the infered type from the server side declaration of self.topics even on the client :)
 		]]
 		print("success")
