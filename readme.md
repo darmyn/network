@@ -17,8 +17,8 @@ topics.myResponse:connect(function(player: Player, num1: number, num2: number)
 	return num1 + num2
 end)
 
-Network.new("test", topics) --> you can also pass a third arugment representing a list of players
-				-- who will have access to the topics inside of this network.
+Network.new("test", topics) 
+--> you can also pass a third arugment representing a list of players who will have access to the topics inside of this network.
 
 print(require(replicatedStorage.ServerClient).new())
 ```
