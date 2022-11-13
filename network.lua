@@ -7,14 +7,27 @@ local responseProxy = Instance.new("RemoteFunction")
 local getReplicatedNetworkInfo = Instance.new("RemoteFunction")
 
 local topicTypes = {
-	event = "event",
-	response = "response"
+	event = 1,
+	response = 2
 }
 
-local topic = {} :: topicClass
+local topic = {}
 topic.__index = topic
 
-local function executeCallbacks(self: topicClass, ...)
+local function forEachPlayer(self: topic, callback, ...)
+	local members = self.network.members
+	if members then
+		for player in pairs(members) do
+			callback(player, ...)
+		end
+	else
+		for _, player in pairs(players:GetPlayers()) do
+			callback(player, ...)
+		end
+	end
+end
+
+local function executeCallbacks(self: topic, ...)
 	local finalResult
 	for _, callback in ipairs(self.callbacks) do
 		finalResult = callback(...)
@@ -26,10 +39,10 @@ function topic.new(type: topicType)
 	local self = setmetatable({}, topic)
 	self.type = type
 	self.callbacks = {}
-	return self :: topic
+	return self
 end
 
-function topic:connect(callback: callback)
+function topic.connect(self: topic, callback: callback)
 	table.insert(self.callbacks, callback)
 	return {
 		disconnect = function()
@@ -38,11 +51,11 @@ function topic:connect(callback: callback)
 	}
 end
 
-function topic:fire(...)
+function topic.fire(self: topic, ...)
 	if isServer then
 		local args = table.pack(...)
 		local player = args[1]
-		table.remove(args[1])
+		table.remove(args, 1)
 		if self.type == topicTypes.event then
 			eventProxy:FireClient(player, self.network.id, self.name, table.unpack(args))
 		end
@@ -55,12 +68,12 @@ function topic:fire(...)
 	end
 end
 
-function topic:fireNearby(location: Vector3, radius: number, ...)
+function topic.fireNearby(self: topic, location: Vector3, radius: number, ...)
 	if isServer then
-		for _, player in pairs(players:GetPlayers()) do
+		forEachPlayer(self, function(player, ...)
 			local character = player.Character
 			if character then
-				local humanoid: Humanoid = character:FindFirstChild("HumanoidRootPart")
+				local humanoid: Humanoid = character:FindFirstChild("Humanoid")
 				if humanoid and humanoid.Health > 0 then
 					local rootPart = humanoid.RootPart
 					if (location - rootPart.Position).Magnitude <= radius then
@@ -68,25 +81,25 @@ function topic:fireNearby(location: Vector3, radius: number, ...)
 					end
 				end
 			end
-		end 
+		end, ...)
 	end
 end
 
-function topic:fireAllExcept(blacklist: memberList, ...)
+function topic.fireAllExcept(self: topic, blacklist: memberList, ...)
 	if isServer then
-		for _, player in pairs(players:GetPlayers()) do
+		forEachPlayer(self, function(player, ...)
 			if not table.find(blacklist, player) then
 				self:fire(player, ...)
 			end
-		end
+		end, ...)
 	end
 end
 
-function topic:fireAll(...)
+function topic.fireAll(self: topic, ...)
 	if isServer then
-		for _, player in pairs(players:GetPlayers()) do
+		forEachPlayer(self, function(player, ...)
 			self:fire(player, ...)
-		end
+		end, ...)
 	end
 end
 
@@ -114,8 +127,8 @@ local function convertMembersToDict(members: memberList)
 	return result
 end
 
-local activeNetworks = {} :: {[networkId]: network}
-local network = {} :: network
+local network = {}
+network.active = {} :: {[networkId]: network}
 network.__index = network
 
 local function initializeTopics(self: network)
@@ -128,8 +141,9 @@ end
 function network.new(id: networkId, topics: topics?, members: memberList?)
 	local self = setmetatable({}, network)
 	self.id = id
+
 	if isServer then
-		self.topics = (topics)
+		self.topics = topics
 		if members then
 			self.members = convertMembersToDict(members)
 		end
@@ -138,13 +152,40 @@ function network.new(id: networkId, topics: topics?, members: memberList?)
 		self.topics = decompressTopics(replicatedTopics)
 		self.members = replicatedMembers
 	end
+
 	initializeTopics(self)
-	activeNetworks[id] = self
+	network.active[id] = self
 	return self
 end
 
+function network.addMembers(self: network, members: memberList)
+	if self.members then
+		for _, player in pairs(members) do
+			self.members[player] = true
+		end
+	else
+		self.members = convertMembersToDict(members)
+	end
+end
+
+function network.hasAccess(self: network, player: Player)
+	if self.members then
+		if self.members[player] then
+			return true
+		end
+	else
+		return true
+	end
+end
+
 local function clientSignalHandler(networkId: networkId, topicName: topicName, ...)
-	return executeCallbacks(activeNetworks[networkId].topics[topicName], ...)
+	local selectedNetwork = network.active[networkId]
+	while not selectedNetwork do
+		print("waiting")
+		selectedNetwork = network.active[networkId]
+		task.wait()
+	end
+	return executeCallbacks(selectedNetwork.topics[topicName], ...)
 end
 
 --> the server handler thouroughly checks the data passed through by the client since it can easily be modified by
@@ -153,16 +194,13 @@ local function serverSignalHandler(player: Player, networkId: networkId, topicNa
 	local result
 	if networkId and typeof(networkId) == "string" then
 		if topicName and typeof(topicName) == "string" then
-			local selectedNetwork = activeNetworks[networkId]
+			local selectedNetwork = network.active[networkId]
 			if selectedNetwork then
-				if selectedNetwork.members then
-					if not selectedNetwork.members[player] then
-						return
+				if selectedNetwork:hasAccess(player) then
+					local selectedTopic = selectedNetwork.topics[topicName]
+					if selectedTopic then
+						result = executeCallbacks(selectedTopic, player, ...)
 					end
-				end
-				local selectedTopic = selectedNetwork.topics[topicName]
-				if selectedTopic then
-					result = executeCallbacks(selectedTopic, player, ...)
 				end
 			end
 		end
@@ -172,8 +210,11 @@ local function serverSignalHandler(player: Player, networkId: networkId, topicNa
 end
 
 local function getNetworkInfo(player: Player, networkId: networkId)
-	local selectedNetwork = activeNetworks[networkId]
+	local selectedNetwork = network.active[networkId]
 	if selectedNetwork then
+		if not selectedNetwork.loaded then
+			selectedNetwork.loaded = true
+		end
 		if selectedNetwork.members then
 			if not selectedNetwork.members[player] then
 				return
@@ -214,33 +255,17 @@ else
 	eventProxy.OnClientEvent:Connect(clientSignalHandler)
 end
 
-type network = {
-	id: networkId,
-	topics: topics,
-	members: {[Player]: true},
-}
- type networkId = string | Instance
- type memberList = {[number]: Player}
-export type type = network
-export type topic = {
-	type: string,
-	name: string,
-	connect: (self: any, callback: callback) -> (...any),
-	fire: (self: any, ...any) -> (...any),
-	fireAll: (self: any, ...any) -> (...any),
-	fireNearby: (self: any, location: Vector3, radius: number, ...any) -> (...any),
-	fireAllExcept: (self: any, blacklist: memberList, ...any) -> (...any)
-}
- type topicClass = topic & {
-	network: network,
-	callbacks: {[number]: callback}
-}
- type topicName = string
- type topicType = string
- type callback = (...any) -> (...any)
- type compressedTopic = {type: string}
- type compressedTopics = {[topicName]: compressedTopic}
- type topics = {[topicName]: topic}
+type network = typeof(network.new(""))
+type networkId = string | Instance
+type memberList = {[number]: Player}
+type topicName = string
+type topicType = number
+type callback = (...any) -> (...any)
+type compressedTopic = {type: string}
+type compressedTopics = {[topicName]: compressedTopic}
+type topics = {[topicName]: topic}
+export type Type = network
+export type topic = typeof(topic.new(0))
 
 return {
 	new = network.new,
